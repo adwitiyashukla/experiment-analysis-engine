@@ -13,8 +13,8 @@ venv/
 htmlcov/
 /data/raw/*
 !/data/raw/.gitkeep
-/data/processed/*
-!/data/processed/.gitkeep
+/data/processed/
+/artifacts/
 *.log
 *.err
 .DS_Store

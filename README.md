@@ -6,7 +6,7 @@ An analysis engine for one large randomised advertising experiment. It reads the
 ![Python](https://img.shields.io/badge/python-3.10%20to%203.13-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Every number below was measured on the full file of 13,979,592 users. The run writes them to `artifacts/run_summary.json` and this README quotes that file.
+Every number below came from one run over the full file of 13,979,592 users. The run writes them all to `artifacts/run_summary.json`.
 
 ## The experiment
 
@@ -174,9 +174,10 @@ src/expengine/
   policy/allocate.py       greedy against even allocation
   viz/plots.py             the eight figures
 tests/                     one file per module, plus the style scans
-artifacts/                 the tables and run_summary.json from the last run
-reports/figures/           the figures from the last run
+reports/figures/           the figures this README shows
 ```
+
+A run also writes its tables to `artifacts/`, which is not tracked here.
 
 ## License
 

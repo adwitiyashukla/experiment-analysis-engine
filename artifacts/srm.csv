@@ -1,2 +1,0 @@
-rows_total,rows_treated,rows_control,expected_treated,expected_control,observed_treatment_share,intended_treatment_share,chi_square,p_value,threshold,passes
-13979592,11882655,2096937,11882653.2,2096938.8000000003,0.8500001287591226,0.85,1.817775848947767e-06,0.9989242531217909,0.001,True
