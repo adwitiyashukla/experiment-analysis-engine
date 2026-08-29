@@ -334,7 +334,7 @@ def run(skip_figures: bool = False, refit: bool = False) -> dict:
         f"{segment_result['significant_corrected']} after"
     )
 
-    log("budget allocation across baseline propensity deciles")
+    log("budget allocation across baseline propensity bins")
     covariate = covariates[config.PRIMARY_OUTCOME]
     bins = segments.assign_bins(
         covariate, segments.quantile_edges(covariate, config.ALLOCATION_BINS)
@@ -358,7 +358,7 @@ def run(skip_figures: bool = False, refit: bool = False) -> dict:
         )
         allocation_rows.append(
             {
-                "segment": f"decile {int(bin_index) + 1}",
+                "segment": f"bin {int(bin_index) + 1}",
                 "rows_treated": rows_bin_treated,
                 "rows_control": rows_bin_control,
                 "impressions": impressions,

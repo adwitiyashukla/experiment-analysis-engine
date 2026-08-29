@@ -26,7 +26,8 @@ def _save(figure, path: Path) -> Path:
 
 def plot_balance(table: pd.DataFrame, path: Path, threshold: float) -> Path:
     figure, axes = plt.subplots(figsize=FIGURE_SIZE)
-    ordered = table.sort_values("feature")
+    positions_by_index = table["feature"].str.extract(r"(\d+)", expand=False).astype(int)
+    ordered = table.assign(feature_index=positions_by_index).sort_values("feature_index")
     positions = np.arange(ordered.shape[0])
     axes.barh(positions, ordered["standardised_mean_difference"], color=COLOR_PRIMARY)
     axes.set_yticks(positions)
@@ -35,7 +36,7 @@ def plot_balance(table: pd.DataFrame, path: Path, threshold: float) -> Path:
     axes.axvline(threshold, color=COLOR_ALERT, linestyle="--", linewidth=0.9)
     axes.axvline(-threshold, color=COLOR_ALERT, linestyle="--", linewidth=0.9)
     axes.set_xlabel("standardised mean difference, treated minus control")
-    axes.set_title("Randomisation check on the 12 pre-treatment features")
+    axes.set_title("Randomisation check on the 12 anonymised features")
     axes.grid(axis="x", alpha=0.3, linewidth=0.6)
     return _save(figure, path)
 
@@ -238,7 +239,7 @@ def plot_allocation(table: pd.DataFrame, path: Path) -> Path:
     )
     axes.set_xticks(positions)
     axes.set_xticklabels(table["segment"], rotation=45, ha="right", fontsize=8)
-    axes.set_xlabel("baseline propensity decile, lowest to highest")
+    axes.set_xlabel("baseline propensity bin, lowest to highest")
     axes.set_ylabel("impressions allocated")
     axes.set_title("Where a limited impression budget should go")
     axes.grid(axis="y", alpha=0.3, linewidth=0.6)

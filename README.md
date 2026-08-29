@@ -1,12 +1,16 @@
 # Experiment analysis engine
 
-An analysis engine for one large randomised advertising experiment. It reads the raw Criteo uplift file, checks whether the randomisation held, estimates the effect four different ways, and ends with a budget split that follows from those estimates.
+An analysis engine for one large randomised advertising experiment. It reads the raw Criteo uplift file, checks whether the randomisation held, estimates the effect on assignment and on the users who actually saw an ad, and ends with a budget split that follows from those estimates.
+
+[![CI](https://github.com/adwitiyashukla/experiment-analysis-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/adwitiyashukla/experiment-analysis-engine/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%20to%203.13-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 Every number below was measured on the full file of 13,979,592 users. The run writes them to `artifacts/run_summary.json` and this README quotes that file.
 
 ## The experiment
 
-Criteo published the logs of a randomised advertising experiment. Each row is one user. The user was assigned to treatment or control, treated users became eligible to see an ad, and the row records whether the user visited the advertiser and whether the user converted. Twelve features describe the user before assignment. They are anonymised, so there is nothing to read into them beyond their values.
+Criteo published the logs of a randomised advertising experiment. Each row is one user. The user was assigned to treatment or control, treated users became eligible to see an ad, and the row records whether the user visited the advertiser and whether the user converted. Twelve features describe each user. Criteo publishes them anonymised as f0 to f11, with no description and no statement of when they were recorded, so this engine treats them as covariates and nothing more.
 
 The file is the [Criteo uplift prediction dataset](https://ailab.criteo.com/criteo-uplift-prediction-dataset/), released with [A Large Scale Benchmark for Uplift Modeling](http://papers.adkdd.org/2018/papers/adkdd18-diemert-large-scale.pdf) at AdKDD 2018. This engine expects version 2.1, which is also mirrored on [Hugging Face](https://huggingface.co/datasets/criteo/criteo-uplift).
 
@@ -37,7 +41,7 @@ The whole run is one command. It moves through these stages.
 9. Incrementality. The conversions that simple attribution would claim are set against the conversions the experiment says were caused.
 10. Power. The smallest effect this design could detect, and the sample size the observed effect needed.
 11. Segments. Effects inside quartiles of each feature, with Benjamini Hochberg control across the whole family.
-12. Allocation. Impressions are ranked by the effect in each covariate decile, and a fixed budget is spent greedily against an even split.
+12. Allocation. Impressions are ranked by the effect in each covariate bin, and a fixed budget is spent greedily against an even split.
 
 ## Results
 
@@ -49,7 +53,7 @@ The features are a different matter.
 
 ![Randomisation check on the twelve features](reports/figures/balance_smd.png)
 
-The largest standardised mean difference across the twelve features is 0.0488 on f3 and the mean is 0.0207, both under the 0.10 the engine treats as a practical failure, so the guardrail passes. The z statistics are another story. f3 sits 67 standard errors away from its control mean, and all 12 of them sit beyond three. At fourteen million rows a gap this small is still far larger than sampling noise, so the two arms are close but not interchangeable. That comes back in the next section.
+The largest standardised mean difference across the twelve features is 0.0488 on f3 and the mean is 0.0207, both under the 0.10 the engine treats as a practical failure, so the guardrail passes. The z statistics are another story. f3 sits 67 standard errors away from its control mean, and all 12 of them sit beyond three. At fourteen million rows a gap this small is still far larger than sampling noise, so the two arms are close but not interchangeable. Either the assignment was not perfectly clean, or not every feature was recorded before assignment, and the dataset does not document enough to separate those two. Whichever it is, the next section shows it moving the estimate.
 
 ### The effect of being assigned to treatment
 
@@ -115,9 +119,9 @@ Every feature is cut into quartiles, which leaves 23 usable segments once ties c
 
 ![Greedy allocation against an even split](reports/figures/allocation.png)
 
-Users are placed in deciles of the control variate, which is a baseline propensity to convert, and each decile gets its own effect estimate. Take 25 percent of the impressions the campaign actually served, 107,053 of them, and spend them greedily on the deciles with the largest effect per impression. That gives 5,244 incremental conversions against 1,786 for an even split, a factor of 2.94.
+Users are placed in quantile bins of the control variate, which is a baseline propensity to convert, and each bin gets its own effect estimate. Ten cuts collapse to eight bins because the model gives many users the same predicted rate. Take 25 percent of the impressions the campaign actually served, 107,053 of them, and spend them greedily on the bins with the largest effect per impression. That gives 5,244 incremental conversions against 1,786 for an even split, a factor of 2.94.
 
-The same data both ranks the deciles and scores the gain, so the factor is closer to an upper bound than to a forecast.
+The same data both ranks the bins and scores the gain, so the factor is closer to an upper bound than to a forecast.
 
 ## Running it
 
@@ -134,7 +138,7 @@ expengine verify
 expengine run
 ```
 
-`verify` builds the parquet cache and checks the published facts. `run` walks every stage and writes to `artifacts/` and `reports/figures/`. Fitting the control variate is nearly the whole cost. A first run took about twenty minutes on my laptop, sixteen of them predicting the covariate for every user. The fitted covariate is cached in `data/processed/control_variate.npz`, so the next run finished the same twelve stages in 37 seconds. Pass `--refit` to fit it again, or `--skip-figures` for the tables alone.
+`verify` builds the parquet cache and checks the published facts. `run` walks every stage and writes to `artifacts/` and `reports/figures/`. Fitting the control variate is nearly the whole cost. A first run took about twenty minutes on my laptop, sixteen of them predicting the covariate for every user. The fitted covariate is cached in `data/processed/control_variate.npz`, so the next run gets through all twelve stages in about a minute. Pass `--refit` to fit it again, or `--skip-figures` for the tables alone.
 
 Set `EXPENGINE_RAW_DIR`, `EXPENGINE_PROCESSED_DIR`, `EXPENGINE_ARTIFACTS_DIR` or `EXPENGINE_FIGURES_DIR` to move any of those folders somewhere else.
 

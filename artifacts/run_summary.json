@@ -215,7 +215,7 @@
     "rows_required_with_cuped": 81566,
     "target_power": 0.8
   },
-  "runtime_seconds": 36.9,
+  "runtime_seconds": 64.9,
   "segments": {
     "alpha": 0.05,
     "dropped_by_correction": 0,
